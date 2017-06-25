@@ -18,9 +18,11 @@ def transpose_xy(array):
 def get_image_array(filepath):
 
 	im = Image.open(filepath)
+	im.convert("RGB")
 
 	print("The original image width is %i pixels." %im.size[0])
 	print("The original image height is %i pixels." %im.size[1])
+	print("The image mode is %s." %im.mode)
 
 	trans_image_array = np.array(im.getdata(), np.uint8).reshape(im.size[1], im.size[0], 3)
 	image_array = transpose_xy(trans_image_array)
