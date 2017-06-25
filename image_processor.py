@@ -18,13 +18,21 @@ def transpose_xy(array):
 def get_image_array(filepath):
 
 	im = Image.open(filepath)
-	im.convert("RGB")
 
 	print("The original image width is %i pixels." %im.size[0])
 	print("The original image height is %i pixels." %im.size[1])
 	print("The image mode is %s." %im.mode)
 
-	trans_image_array = np.array(im.getdata(), np.uint8).reshape(im.size[1], im.size[0], 3)
+	# remove transparency for simplicity
+	if im.mode == "RGBA":
+		trans_image_array = np.array(im.getdata(), np.uint8).reshape(im.size[1], im.size[0], 4)
+		trans_image_array = trans_image_array[:,:,:3]
+	elif im.mode == "RGB":
+		trans_image_array = np.array(im.getdata(), np.uint8).reshape(im.size[1], im.size[0], 3)
+	else:
+		print("%s is not a supported mode." %im.mode)
+		sys.exit()
+
 	image_array = transpose_xy(trans_image_array)
 	im.close
 
