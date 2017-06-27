@@ -144,11 +144,16 @@ def tint_image(image_array, colors, percent):
 
 	print("Tinting image...")
 
+	# add black and white to color scheme
+	colors.append((0,0,0))
+	colors.append((255,255,255))
+
 	for j in range(image_array.shape[1]):
 		for i in range(image_array.shape[0]):	
 			image_array[i,j] = tint_pixel(image_array[i,j], colors, percent)
 
 	return image_array
+
 
 # tints pixel towards the chosen colors
 def tint_pixel(pixel, colors, percent):
@@ -185,13 +190,85 @@ def get_team_colors(team_name):
 
 	team_colors = {
 
-		"Warriors": [(0,0,0),(255,255,255),(0,107,182),(255,225,76)],
-		"Ducks": [(0,0,0),(255,255,255),(0,121,53),(254,225,35)],
-		"49ers": [(0,0,0),(255,255,255),(175,30,44),(230,190,138)],
-		"Kings": [(0,0,0),(255,255,255),(178,183,187)],
-		"Leafs": [(0,0,0),(255,255,255),(1,62,127)],
-		"Packers": [(0,0,0),(255,255,255),(23,94,34),(255,184,28)],
-		"Vikings": [(0,0,0),(255,255,255),(84,41,109),(255,184,28)]
+		"Warriors": [(0,107,182),(255,225,76)],
+		"Ducks": [(0,121,53),(254,225,35)],
+		"49ers": [(175,30,44),(230,190,138)],
+		"Kings": [(255,255,255),(178,183,187)],
+		"Leafs": [(255,255,255),(1,62,127)],
+		"Packers": [(23,94,34),(255,184,28)],
+		"Vikings": [(84,41,109),(255,184,28)]
 	}
 
 	return team_colors[team_name]
+
+
+# tints picture towards the chosen colors with linear algebra
+def vector_tint_image(image_array, colors):
+
+	print("Tinting image...")
+
+	# creating 1st unit vector from colors[0]
+	color_vector_0 = np.array([colors[0][0], colors[0][1], colors[0][2]])
+	mag_color_vector_0 = np.sqrt(color_vector_0.dot(color_vector_0))
+	unit_vector_0 = [component/mag_color_vector_0 for component in color_vector_0]
+
+	# creating 2nd unit vector from colors[1]
+	color_vector_1 = np.array([colors[1][0], colors[1][1], colors[1][2]])
+	mag_color_vector_1 = np.sqrt(color_vector_1.dot(color_vector_1))
+	unit_vector_1 = [component/mag_color_vector_1 for component in color_vector_1]
+
+	# generating 3rd orthogonal unit vector with cross product
+	unit_vector_2 = np.cross(unit_vector_0, unit_vector_1)
+
+	# matrix that will transform the pixel into the team color vector space
+	transformation_matrix = np.column_stack( (unit_vector_0, unit_vector_1, unit_vector_2) )
+	inv_transformation_matrix = np.linalg.inv(transformation_matrix)
+
+	# applying transformation to each pixel in image
+	for j in range(image_array.shape[1]):
+		for i in range(image_array.shape[0]):	
+			image_array[i,j] = vector_tint_pixel(image_array[i,j], colors, transformation_matrix, inv_transformation_matrix)
+
+		# some feedback on progress
+		if (j+1)%100 == 0:
+			print("Finished row %i" %(j+1))
+
+	return image_array
+
+
+# tints pixel using linear algebra
+def vector_tint_pixel(pixel, colors, transformation_matrix, inv_transformation_matrix):
+
+	# turn tuple into np array (vector)
+	pixel_vector = np.array([pixel[0], pixel[1], pixel[2]])
+
+	# transform the pixel into the team color vector space
+	transformed_pixel_vector = inv_transformation_matrix.dot(pixel_vector)
+
+	# remove component of pixel that is orthogonal to team colors (3rd component)
+	cut_transformed_pixel_vector = np.array([transformed_pixel_vector[0], transformed_pixel_vector[1], 0])
+
+	# transform pixel back into RGB space
+	cut_pixel_vector = transformation_matrix.dot(cut_transformed_pixel_vector)
+
+	# round back artifacts from outside of RGB values (0, 255)
+	for i in range(len(cut_pixel_vector)):
+		if cut_pixel_vector[i] > 255:
+			cut_pixel_vector[i] = 255
+		if cut_pixel_vector[i] < 0:
+			cut_pixel_vector[i] = 0
+
+	# change back into a tuple
+	final_pixel_vector = (int(cut_pixel_vector[0]), int(cut_pixel_vector[1]), int(cut_pixel_vector[2]))
+
+	return final_pixel_vector
+
+
+# main function for local testing (use process_image.py for argument parsing)
+if __name__ == "__main__":
+
+	filename = "warriors_image.png"
+	team = "Warriors"
+	image_array = get_image_array(filename)
+	vector_tint_image(image_array, get_team_colors(team))
+	create_image_from_array(image_array, "vector_tinted_" + team + "_" + filename)
