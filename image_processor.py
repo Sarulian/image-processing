@@ -134,20 +134,20 @@ def average_of(colors):
 
 
 # tints picture towards the chosen colors
-def tint_image(image_array, colors):
+def tint_image(image_array, colors, percent):
 
 	print("Tinting image...")
 
 	for j in range(image_array.shape[1]):
 		for i in range(image_array.shape[0]):	
-			image_array[i,j] = tint_pixel(image_array[i,j], colors)
+			image_array[i,j] = tint_pixel(image_array[i,j], colors, percent)
 
 	return image_array
 
 # tints pixel towards the chosen colors
-def tint_pixel(pixel, colors):
+def tint_pixel(pixel, colors, percent):
 
-	tint_scale = 0.8
+	tint_scale = percent
 	color = get_closest_color(pixel, colors)
 	pixel_array = [pixel[0], pixel[1], pixel[2]]
 
@@ -192,31 +192,31 @@ def get_team_colors(team_name):
 
 
 # main function
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-	parser = argparse.ArgumentParser(description='Manipulate images.')
-	parser.add_argument("file", help="the file to manipulate")
-	parser.add_argument("action", help="what to do with the file")
-	parser.add_argument("-t", "--team", help="the name of the team whose colors to use for tint")
+# 	parser = argparse.ArgumentParser(description='Manipulate images.')
+# 	parser.add_argument("file", help="the file to manipulate")
+# 	parser.add_argument("action", help="what to do with the file")
+# 	parser.add_argument("-t", "--team", help="the name of the team whose colors to use for tint")
 
-	args = parser.parse_args()
-	filename = args.file
-	image_array = get_image_array(filename)
+# 	args = parser.parse_args()
+# 	filename = args.file
+# 	image_array = get_image_array(filename)
 
-	if args.action == "enlarge":
+# 	if args.action == "enlarge":
 
-		image_array = enlarge_image(image_array)
-		create_image_from_array(image_array, "large_" + filename)
-		print("File saved as large_%s" %filename)
+# 		image_array = enlarge_image(image_array)
+# 		create_image_from_array(image_array, "large_" + filename)
+# 		print("File saved as large_%s" %filename)
 
-	elif args.action == "compress":
+# 	elif args.action == "compress":
 
-		image_array = compress_image(image_array)
-		create_image_from_array(image_array, "small_" + filename)
-		print("File saved as small_%s" %filename)
+# 		image_array = compress_image(image_array)
+# 		create_image_from_array(image_array, "small_" + filename)
+# 		print("File saved as small_%s" %filename)
 
-	elif args.action == "tint":
+# 	elif args.action == "tint":
 
-		image_array = tint_image(image_array, get_team_colors(args.team))
-		create_image_from_array(image_array, args.team + "_" + filename)
-		print("File saved as %s" %(args.team + "_" + filename))
+# 		image_array = tint_image(image_array, get_team_colors(args.team))
+# 		create_image_from_array(image_array, args.team + "_" + filename)
+# 		print("File saved as %s" %(args.team + "_" + filename))
