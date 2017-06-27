@@ -1,6 +1,6 @@
 from PIL import Image
 import numpy as np
-import sys
+import sys, argparse
 
 
 # transpose x and y coordinates
@@ -35,7 +35,7 @@ def get_image_array(filepath):
 		sys.exit()
 
 	image_array = transpose_xy(trans_image_array)
-	im.close
+	im.close()
 
 	return image_array
 
@@ -48,7 +48,8 @@ def create_image_from_array(image_array, filename):
 	print("The final image width is %i pixels." %im.size[0])
 	print("The final image height is %i pixels." %im.size[1])
 
-	im.save("new_" + filename)
+	im.save(filename)
+	im.close()
 
 
 # R->G G->B B->R
@@ -132,22 +133,93 @@ def average_of(colors):
 	return ( red_avg, green_avg, blue_avg )
 
 
+# tints picture towards the chosen colors
+def tint_image(image_array, colors):
+
+	print("Tinting image...")
+
+	for j in range(image_array.shape[1]):
+		for i in range(image_array.shape[0]):	
+			image_array[i,j] = tint_pixel(image_array[i,j], colors)
+
+	return image_array
+
+# tints pixel towards the chosen colors
+def tint_pixel(pixel, colors):
+
+	tint_scale = 0.8
+	color = get_closest_color(pixel, colors)
+	pixel_array = [pixel[0], pixel[1], pixel[2]]
+
+	for i in range(len(pixel)):
+		pixel_array[i] += int(tint_scale * (color[i] - pixel_array[i]))
+
+	return (pixel_array[0], pixel_array[1], pixel_array[2])
+
+
+# treat colors as vectors, return color closest to the pixel's color
+def get_closest_color(pixel, colors):
+
+	closest_index = 0
+	closest_color = colors[0]
+	closest_diff = pow(255,2)*3
+
+	for color in colors:
+		diff = 0
+		for i in range(len(pixel)):
+			diff += pow((pixel[i]-color[i]),2)
+		if diff < closest_diff:
+			closest_color = color
+			closest_diff = diff
+
+	return closest_color
+
+
+def get_team_colors(team_name):
+
+	team_colors = {
+
+		"Warriors": [(0,0,0),(255,255,255),(0,107,182),(255,225,76)],
+		"Ducks": [(0,0,0),(255,255,255),(0,121,53),(254,225,35)],
+		"49ers": [(0,0,0),(255,255,255),(175,30,44),(230,190,138)]
+	}
+
+	return team_colors[team_name]
+
+
 # main function
 if __name__ == "__main__":
 
-	if len(sys.argv) != 2:
-		print("Usage: python3 image_processor.py <filename>")
-		print("Exiting...")
-		sys.exit()
+	# if len(sys.argv) != 2:
+	# 	print("Usage: python3 image_processor.py <filename>")
+	# 	print("Exiting...")
+	# 	sys.exit()
 
-	filename = sys.argv[1]
+	# filename = sys.argv[1]
 
+	parser = argparse.ArgumentParser(description='Manipulate images.')
+	parser.add_argument("file", help="the file to manipulate")
+	parser.add_argument("action", help="what to do with the file")
+	parser.add_argument("-t", "--team", help="the name of the team whose colors to use for tint")
+
+	args = parser.parse_args()
+	filename = args.file
 	image_array = get_image_array(filename)
 
-	for i in range(50):
-		image_array = compress_image(image_array)
+	if args.action == "enlarge":
+
 		image_array = enlarge_image(image_array)
+		create_image_from_array(image_array, "large_" + filename)
+		print("File saved as large_%s" %filename)
 
-	create_image_from_array(image_array, filename)
+	elif args.action == "compress":
 
-	print("File saved as new_%s" %filename)
+		image_array = compress_image(image_array)
+		create_image_from_array(image_array, "small_" + filename)
+		print("File saved as small_%s" %filename)
+
+	elif args.action == "tint":
+
+		image_array = tint_image(image_array, get_team_colors(args.team))
+		create_image_from_array(image_array, args.team + "_" + filename)
+		print("File saved as %s" %(args.team + "_" + filename))
