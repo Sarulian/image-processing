@@ -1,3 +1,6 @@
+# This file should be executed from the terminal.
+# It parses the arguments and runs the correct image processing functions.
+
 import argparse
 import image_processor as im
 
