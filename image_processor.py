@@ -1,6 +1,9 @@
+# This file contains a variety of image processing functions to be called
+# by another file to run.
+
 from PIL import Image
 import numpy as np
-import sys, argparse
+import os, sys, argparse
 
 
 # transpose x and y coordinates
@@ -40,7 +43,7 @@ def get_image_array(filepath):
 	return image_array
 
 
-# make a png image from numpy array
+# make a png image from numpy array and save to ./OutputImages
 def create_image_from_array(image_array, filename):
 
 	im = Image.fromarray(transpose_xy(image_array), "RGB")
@@ -48,7 +51,10 @@ def create_image_from_array(image_array, filename):
 	print("The final image width is %i pixels." %im.size[0])
 	print("The final image height is %i pixels." %im.size[1])
 
-	im.save(filename)
+	if not os.path.exists("./OutputImages"):
+		os.makedirs("./OutputImages")
+
+	im.save("./OutputImages/" + filename)
 	im.close()
 
 
@@ -189,34 +195,3 @@ def get_team_colors(team_name):
 	}
 
 	return team_colors[team_name]
-
-
-# main function
-# if __name__ == "__main__":
-
-# 	parser = argparse.ArgumentParser(description='Manipulate images.')
-# 	parser.add_argument("file", help="the file to manipulate")
-# 	parser.add_argument("action", help="what to do with the file")
-# 	parser.add_argument("-t", "--team", help="the name of the team whose colors to use for tint")
-
-# 	args = parser.parse_args()
-# 	filename = args.file
-# 	image_array = get_image_array(filename)
-
-# 	if args.action == "enlarge":
-
-# 		image_array = enlarge_image(image_array)
-# 		create_image_from_array(image_array, "large_" + filename)
-# 		print("File saved as large_%s" %filename)
-
-# 	elif args.action == "compress":
-
-# 		image_array = compress_image(image_array)
-# 		create_image_from_array(image_array, "small_" + filename)
-# 		print("File saved as small_%s" %filename)
-
-# 	elif args.action == "tint":
-
-# 		image_array = tint_image(image_array, get_team_colors(args.team))
-# 		create_image_from_array(image_array, args.team + "_" + filename)
-# 		print("File saved as %s" %(args.team + "_" + filename))
