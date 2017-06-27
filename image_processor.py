@@ -181,7 +181,10 @@ def get_team_colors(team_name):
 
 		"Warriors": [(0,0,0),(255,255,255),(0,107,182),(255,225,76)],
 		"Ducks": [(0,0,0),(255,255,255),(0,121,53),(254,225,35)],
-		"49ers": [(0,0,0),(255,255,255),(175,30,44),(230,190,138)]
+		"49ers": [(0,0,0),(255,255,255),(175,30,44),(230,190,138)],
+		"Kings": [(0,0,0),(255,255,255),(178,183,187)],
+		"Leafs": [(0,0,0),(255,255,255),(1,62,127)],
+		"Packers": [(0,0,0),(255,255,255),(23,94,34),(255,184,28)]
 	}
 
 	return team_colors[team_name]
@@ -189,13 +192,6 @@ def get_team_colors(team_name):
 
 # main function
 if __name__ == "__main__":
-
-	# if len(sys.argv) != 2:
-	# 	print("Usage: python3 image_processor.py <filename>")
-	# 	print("Exiting...")
-	# 	sys.exit()
-
-	# filename = sys.argv[1]
 
 	parser = argparse.ArgumentParser(description='Manipulate images.')
 	parser.add_argument("file", help="the file to manipulate")
