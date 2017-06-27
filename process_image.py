@@ -13,7 +13,9 @@ if __name__ == "__main__":
 	parser.add_argument("action", help="compress, enlarge, or tint (requires -t and -p)")
 	parser.add_argument("-t", "--team", help="the name of the team whose colors to use for tint",
 						default="Warriors", type=str)
-	parser.add_argument("-p", "--percent", help="how strong to tint (0-1)",
+	parser.add_argument("-v", "--vector", help="use linear algebra for vector tinting",
+						action="store_true")
+	parser.add_argument("-p", "--percent", help="strength of non-vector tint (0-1)",
 						default="1", type=float)
 
 	args = parser.parse_args()
@@ -34,6 +36,13 @@ if __name__ == "__main__":
 
 	elif args.action == "tint":
 
-		image_array = im.tint_image(image_array, im.get_team_colors(args.team), args.percent)
-		im.create_image_from_array(image_array, args.team + "_" + filename)
-		print("File saved as %s" %(args.team + "_" + filename))
+		if args.vector:
+			image_array = im.vector_tint_image(image_array, im.get_team_colors(args.team))
+			im.create_image_from_array(image_array, args.team + "_vector_tinted_" + filename)
+			print("File saved as %s" %(args.team + "_vector_tinted_" + filename))
+		else:
+			image_array = im.tint_image(image_array, im.get_team_colors(args.team), args.percent)
+			im.create_image_from_array(image_array, args.team + "_tinted_" + filename)
+			print("File saved as %s" %(args.team + "_tinted_" + filename))
+
+		
