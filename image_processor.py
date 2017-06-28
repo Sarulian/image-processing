@@ -4,6 +4,8 @@
 from PIL import Image
 import numpy as np
 import os, sys, argparse
+import math
+import matplotlib
 
 
 # transpose x and y coordinates
@@ -152,6 +154,10 @@ def tint_image(image_array, colors, percent):
 		for i in range(image_array.shape[0]):	
 			image_array[i,j] = tint_pixel(image_array[i,j], colors, percent)
 
+		# some feedback on progress
+		if (j+1)%100 == 0:
+			print("Finished row %i" %(j+1))
+
 	return image_array
 
 
@@ -196,14 +202,91 @@ def get_team_colors(team_name):
 		"Kings": [(255,255,255),(178,183,187)],
 		"Leafs": [(255,255,255),(1,62,127)],
 		"Packers": [(23,94,34),(255,184,28)],
-		"Vikings": [(84,41,109),(255,184,28)]
+		"Vikings": [(84,41,109),(255,184,28)],
+		"Giants": [(251,91,31),(255,253,208)],
+		"RG": [(255,0,0),(0,255,0)],
+		"GB": [(0,255,0),(0,0,255)],
+		"BR": [(0,0,255),(255,0,0)],
+		"RY": [(255,0,0),(255,255,0)]
 	}
 
 	return team_colors[team_name]
 
 
+def check_orthogonal(team):
+
+	colors = get_team_colors(team)
+	vec_0 = np.array(colors[0])
+	vec_1 = np.array(colors[1])
+
+	dot_product = vec_0.dot(vec_1)
+	print(str(dot_product) + "\n")
+
+
 # tints picture towards the chosen colors with linear algebra
-def vector_tint_image(image_array, colors):
+def hsv_tint_image(image_array, colors):
+
+	print("Tinting image...")
+
+	# add black and white to color scheme
+	colors.append((0,0,0))
+	colors.append((255,255,255))
+
+	hsv_colors = []
+
+	# change team colors from RGB to HSV
+	for color in colors:
+		rgb_color = np.array([color[0]/255, color[1]/255, color[2]/255])
+		hsv_color = matplotlib.colors.rgb_to_hsv(rgb_color)
+		hsv_colors.append(hsv_color)
+
+	# applying transformation to each pixel in image
+	for j in range(image_array.shape[1]):
+		for i in range(image_array.shape[0]):	
+			image_array[i,j] = hsv_tint_pixel(image_array[i,j], hsv_colors)
+
+		# some feedback on progress
+		if (j+1)%100 == 0:
+			print("Finished row %i" %(j+1))
+
+	return image_array
+
+
+# tints pixel using scaling
+def hsv_tint_pixel(pixel, hsv_colors):
+
+	# turn tuple into np array (vector)
+	rgb_pixel = np.array([pixel[0]/255, pixel[1]/255, pixel[2]/255])
+	hsv_pixel = matplotlib.colors.rgb_to_hsv(rgb_pixel)
+
+	# replace hue of pixel with closest team color
+	closest_diff = 1
+	closest_color = np.array([1,1,1])
+
+	for hsv_color in hsv_colors:
+		diff = abs(hsv_color[0] - hsv_pixel[0])
+		if diff < closest_diff:
+			closest_color = hsv_color
+			closest_diff = diff
+
+	hsv_pixel[0] = closest_color[0]
+	rgb_pixel = matplotlib.colors.hsv_to_rgb(hsv_pixel)
+	
+	# round back artifacts from outside of RGB values (0, 255)
+	for i in range(len(rgb_pixel)):
+		if rgb_pixel[i] > 1:
+			rgb_pixel[i] = 1
+		if rgb_pixel[i] < 0:
+			rgb_pixel[i] = 0
+
+	# change back into a tuple
+	final_pixel_vector = (int(255*rgb_pixel[0]), int(255*rgb_pixel[1]), int(255*rgb_pixel[2]))
+
+	return final_pixel_vector
+
+
+# tints picture towards the chosen colors with linear algebra
+def vector_tint_image(image_array, colors, percent):
 
 	print("Tinting image...")
 
@@ -227,7 +310,7 @@ def vector_tint_image(image_array, colors):
 	# applying transformation to each pixel in image
 	for j in range(image_array.shape[1]):
 		for i in range(image_array.shape[0]):	
-			image_array[i,j] = vector_tint_pixel(image_array[i,j], colors, transformation_matrix, inv_transformation_matrix)
+			image_array[i,j] = vector_tint_pixel(image_array[i,j], colors, transformation_matrix, inv_transformation_matrix, percent)
 
 		# some feedback on progress
 		if (j+1)%100 == 0:
@@ -237,7 +320,7 @@ def vector_tint_image(image_array, colors):
 
 
 # tints pixel using linear algebra
-def vector_tint_pixel(pixel, colors, transformation_matrix, inv_transformation_matrix):
+def vector_tint_pixel(pixel, colors, transformation_matrix, inv_transformation_matrix, percent):
 
 	# turn tuple into np array (vector)
 	pixel_vector = np.array([pixel[0], pixel[1], pixel[2]])
@@ -245,11 +328,8 @@ def vector_tint_pixel(pixel, colors, transformation_matrix, inv_transformation_m
 	# transform the pixel into the team color vector space
 	transformed_pixel_vector = inv_transformation_matrix.dot(pixel_vector)
 
-	# remove component of pixel that is orthogonal to team colors (3rd component)
-	cut_transformed_pixel_vector = np.array([transformed_pixel_vector[0], transformed_pixel_vector[1], 0])
-
 	# transform pixel back into RGB space
-	cut_pixel_vector = transformation_matrix.dot(cut_transformed_pixel_vector)
+	cut_pixel_vector = transformation_matrix.dot([transformed_pixel_vector[0], transformed_pixel_vector[1], 0])
 
 	# round back artifacts from outside of RGB values (0, 255)
 	for i in range(len(cut_pixel_vector)):
@@ -267,8 +347,7 @@ def vector_tint_pixel(pixel, colors, transformation_matrix, inv_transformation_m
 # main function for local testing (use process_image.py for argument parsing)
 if __name__ == "__main__":
 
-	filename = "warriors_image.png"
-	team = "Warriors"
-	image_array = get_image_array(filename)
-	vector_tint_image(image_array, get_team_colors(team))
-	create_image_from_array(image_array, "vector_tinted_" + team + "_" + filename)
+	teams = ["Warriors","Ducks","49ers","Kings","Leafs","Packers","Vikings","Giants","RG","GB","BR"]
+	for team in teams:
+		print(team)
+		check_orthogonal(team)
