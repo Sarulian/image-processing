@@ -15,6 +15,8 @@ if __name__ == "__main__":
 						default="Warriors", type=str)
 	parser.add_argument("-v", "--vector", help="use linear algebra for vector tinting",
 						action="store_true")
+	parser.add_argument("--hsv", help="pixels become proportional to team colors",
+						action="store_true")
 	parser.add_argument("-p", "--percent", help="strength of non-vector tint (0-1)",
 						default="1", type=float)
 
@@ -37,9 +39,13 @@ if __name__ == "__main__":
 	elif args.action == "tint":
 
 		if args.vector:
-			image_array = im.vector_tint_image(image_array, im.get_team_colors(args.team))
+			image_array = im.vector_tint_image(image_array, im.get_team_colors(args.team), args.percent)
 			im.create_image_from_array(image_array, args.team + "_vector_tinted_" + filename)
 			print("File saved as %s" %(args.team + "_vector_tinted_" + filename))
+		elif args.hsv:
+			image_array = im.hsv_tint_image(image_array, im.get_team_colors(args.team))
+			im.create_image_from_array(image_array, args.team + "_shade_tinted_" + filename)
+			print("File saved as %s" %(args.team + "_shade_tinted_" + filename))
 		else:
 			image_array = im.tint_image(image_array, im.get_team_colors(args.team), args.percent)
 			im.create_image_from_array(image_array, args.team + "_tinted_" + filename)
